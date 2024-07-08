@@ -33,6 +33,9 @@ parser.add_argument(
     type=int,
     default=2,
 )
+parser.add_argument(
+    "--title", default=None, help="Plot title", type=str
+)
 parser.add_argument("-y", "--ylim", help="max y axis limit", type=float, default=None)
 parser.add_argument("-f", "--font-size", help="plot font-size", type=int, default=16)
 parser.add_argument("--freey", action="store_true", default=False)
@@ -299,15 +302,15 @@ for group_id, group in df.groupby(by="group"):
     if RM is not None:
         rmax = ax
         sys.stderr.write("Subsetting the repeatmakser file.\n")
-        rm = RM[
-            (RM.qname == contig) & (RM.start >= min(truepos)) & (RM.end <= max(truepos))
-        ]
+
         assert len(rm.index) != 0, "No matching RM contig"
         # rmax.set_xlim(rm.start.min(), rm.end.max())
         # rmax.set_ylim(-1, 9)
         rmlength = len(rm.index) * 1.0
         rmcount = 0
         rectangles = []
+        if args.ylim is None:
+            args.ylim = YLIM
         height_offset = max(YLIM, args.ylim) / 20
         for idx, row in rm.iterrows():
             rmcount += 1
@@ -366,9 +369,12 @@ for group_id, group in df.groupby(by="group"):
     minval = min(truepos)
     subval = 0
 
-    title = "{}:{}-{}\n".format(contig, minval, maxval)
-    if GROUPS > 1:
-        ax.set_title(title, fontweight="bold")
+    if args.title is None:
+        title = "{}:{}-{}".format(contig, minval, maxval)
+    else:
+        title = "{}".format(args.title)
+    if GROUPS > 1 or args.title is not None:
+        ax.set_title(title, fontweight="bold", pad=18)
     sys.stderr.write(title)
 
     if args.zerostart:
@@ -394,7 +400,7 @@ for group_id, group in df.groupby(by="group"):
         ax.set_ylim(0, YLIM)
 
     ax.set_xlabel("Assembly position ({})".format(lab), fontweight="bold")
-    ax.set_ylabel("Sequence read depth", fontweight="bold")
+    ax.set_ylabel("Read depth", fontweight="bold")
 
     # Including this causes some internal bug in matplotlib when the font-size changes
     # ylabels = [format(label, ",.0f") for label in ax.get_yticks()]

@@ -303,6 +303,23 @@ for group_id, group in df.groupby(by="group"):
         rmax = ax
         sys.stderr.write("Subsetting the repeatmakser file.\n")
 
+        # Updated to avoid losing entries starting before the
+        # min position and/or ending after the max position
+        #rm = RM[
+        #    (RM.qname == contig) & (RM.start >= min(truepos)) & (RM.end <= max(truepos))
+        #]
+        min_pos = min(truepos)
+        max_pos = max(truepos)
+        # Filter by contig first
+        rm = RM[RM.qname == contig]
+	    # Filter rows where there's an overlap with the specified range
+        rm = rm[
+            (rm['start'] < max_pos) & (rm['end'] > min_pos)
+        ]
+        # Now clip only the overlapping features
+        rm['start'] = rm['start'].clip(lower=min_pos)
+        rm['end'] = rm['end'].clip(upper=max_pos)
+
         assert len(rm.index) != 0, "No matching RM contig"
         # rmax.set_xlim(rm.start.min(), rm.end.max())
         # rmax.set_ylim(-1, 9)
